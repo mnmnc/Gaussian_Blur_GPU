@@ -331,12 +331,12 @@ int main(){
 	}
 
 	///enqueue the kernel into the OpenCL device for execution
-	size_t globalWorkItemSize = 256*256*256;//the total size of 1 dimension of the work items. Basically the whole image buffer size
+	size_t globalWorkItemSize = width*height * 4;//the total size of 1 dimension of the work items. Basically the whole image buffer size
 	size_t workGroupSize = 64; //The size of one work group
 	ret = clEnqueueNDRangeKernel(cmdQueue, kernel, 1, NULL, &globalWorkItemSize, &workGroupSize, 0, NULL, NULL);
 
 	///Read the memory buffer of the new image on the device to the new Data local variable
-	ret = clEnqueueReadBuffer(cmdQueue, gpuNewImg, CL_TRUE, 0, 256 * 256 * 256, flat_image_blurred, 0, NULL, NULL);
+	ret = clEnqueueReadBuffer(cmdQueue, gpuNewImg, CL_TRUE, 0, width*height*4, flat_image_blurred, 0, NULL, NULL);
 
 
 
