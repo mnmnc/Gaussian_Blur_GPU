@@ -137,7 +137,7 @@ int main(){
 
 	// VARIABLES
 	char * filename = "3.png";
-	char * filename_out = "4.png";
+	char * filename_out = "5.png";
 	int width = 678;
 	int height = 353;
 
@@ -179,7 +179,8 @@ int main(){
 	cl_uint platformsN;			//will hold the number of openCL available platforms on the machine
 	cl_device_id deviceID;		//will hold the ID of the openCL device
 	cl_uint devicesN;			//will hold the number of OpenCL devices in the system
-	
+	const cl_device_type kDeviceType = CL_DEVICE_TYPE_GPU; // get GPU device
+
 	//
 	// Loading Kernell
 	//
@@ -198,11 +199,13 @@ int main(){
 	if (clGetPlatformIDs(1, &platformID, &platformsN) != CL_SUCCESS)
 	{
 		printf("Could not get the OpenCL Platform IDs\n");
+		system("PAUSE");
 		return false;
 	}
-	if (clGetDeviceIDs(platformID, CL_DEVICE_TYPE_DEFAULT, 1, &deviceID, &devicesN) != CL_SUCCESS)
+	if (clGetDeviceIDs(platformID, kDeviceType, 1, &deviceID, &devicesN) != CL_SUCCESS)
 	{
 		printf("Could not get the system's OpenCL device\n");
+		system("PAUSE");
 		return false;
 	}
 
@@ -211,6 +214,7 @@ int main(){
 	if (ret != CL_SUCCESS)
 	{
 		printf("Could not create a valid OpenCL context\n");
+		system("PAUSE");
 		return false;
 	}
 	// Create a command queue
@@ -218,6 +222,7 @@ int main(){
 	if (ret != CL_SUCCESS)
 	{
 		printf("Could not create an OpenCL Command Queue\n");
+		system("PAUSE");
 		return false;
 	}
 
@@ -227,18 +232,21 @@ int main(){
 	if (ret != CL_SUCCESS)
 	{
 		printf("Unable to create the GPU image buffer object\n");
+		system("PAUSE");
 		return false;
 	}
 	cl_mem gpuGaussian = clCreateBuffer(context, CL_MEM_READ_ONLY, DIM*DIM*4, NULL, &ret);
 	if (ret != CL_SUCCESS)
 	{
 		printf("Unable to create the GPU image buffer object\n");
+		system("PAUSE");
 		return false;
 	}
 	cl_mem gpuNewImg = clCreateBuffer(context, CL_MEM_WRITE_ONLY, width*height * 4, NULL, &ret);
 	if (ret != CL_SUCCESS)
 	{
 		printf("Unable to create the GPU image buffer object\n");
+		system("PAUSE");
 		return false;
 	}
 
@@ -246,26 +254,33 @@ int main(){
 	if (clEnqueueWriteBuffer(cmdQueue, gpuImg, CL_TRUE, 0, width*height * 4, flat_image, 0, NULL, NULL) != CL_SUCCESS)
 	{
 		printf("Error during sending the image data to the OpenCL buffer\n");
+		system("PAUSE");
 		return false;
 	}
 	if (clEnqueueWriteBuffer(cmdQueue, gpuGaussian, CL_TRUE, 0, DIM*DIM * 4, flat_matrix, 0, NULL, NULL) != CL_SUCCESS)
 	{
 		printf("Error during sending the gaussian kernel to the OpenCL buffer\n");
+		system("PAUSE");
 		return false;
 	}
 
 	//Create a program object and associate it with the kernel's source code.
-	cl_program program = clCreateProgramWithSource(context, 1, (const char **)&src, (const size_t *)&src, &ret);
+	cl_program program = clCreateProgramWithSource(context, 1, (const char **)&src, NULL, &ret);
 	//free(kernelSource);
 	if (ret != CL_SUCCESS)
 	{
 		printf("Error in creating an OpenCL program object\n");
+		system("PAUSE");
 		return false;
 	}
 	//Build the created OpenCL program
 	if ((ret = clBuildProgram(program, 1, &deviceID, NULL, NULL, NULL)) != CL_SUCCESS)
 	{
 		printf("Failed to build the OpenCL program\n");
+		char log[1024] = {};
+		clGetProgramBuildInfo(program, deviceID, CL_PROGRAM_BUILD_LOG, 1024, log, NULL);
+		cout << "Build log:\n" << log << endl;
+		system("PAUSE");
 		return false;
 	}
 
@@ -274,37 +289,44 @@ int main(){
 	if (ret != CL_SUCCESS)
 	{
 		printf("Failed to create the OpenCL Kernel from the built program\n");
+		system("PAUSE");
 		return false;
 	}
 	///Set the arguments of the kernel
 	if (clSetKernelArg(kernel, 0, sizeof(cl_mem), (void *)&gpuImg) != CL_SUCCESS)
 	{
 		printf("Could not set the kernel's \"gpuImg\" argument\n");
+		system("PAUSE");
 		return false;
 	}
 	if (clSetKernelArg(kernel, 1, sizeof(cl_mem), (void *)&gpuGaussian) != CL_SUCCESS)
 	{
 		printf("Could not set the kernel's \"gpuGaussian\" argument\n");
+		system("PAUSE");
 		return false;
 	}
 	if (clSetKernelArg(kernel, 2, sizeof(int), (void *)&width) != CL_SUCCESS)
 	{
 		printf("Could not set the kernel's \"imageWidth\" argument\n");
+		system("PAUSE");
 		return false;
 	}
 	if (clSetKernelArg(kernel, 3, sizeof(int), (void *)&height) != CL_SUCCESS)
 	{
 		printf("Could not set the kernel's \"imgHeight\" argument\n");
+		system("PAUSE");
 		return false;
 	}
 	if (clSetKernelArg(kernel, 4, sizeof(int), (void*)&gauss_filter_dimention) != CL_SUCCESS)
 	{
 		printf("Could not set the kernel's \"gaussian size\" argument\n");
+		system("PAUSE");
 		return false;
 	}
 	if (clSetKernelArg(kernel, 5, sizeof(cl_mem), (void *)&gpuNewImg) != CL_SUCCESS)
 	{
 		printf("Could not set the kernel's \"gpuNewImg\" argument\n");
+		system("PAUSE");
 		return false;
 	}
 
@@ -316,8 +338,10 @@ int main(){
 	///Read the memory buffer of the new image on the device to the new Data local variable
 	ret = clEnqueueReadBuffer(cmdQueue, gpuNewImg, CL_TRUE, 0, 256 * 256 * 256, flat_image_blurred, 0, NULL, NULL);
 
+
+
 	///Clean up everything
-	free(flat_matrix);
+	//free(flat_matrix);
 	clFlush(cmdQueue);
 	clFinish(cmdQueue);
 	clReleaseKernel(kernel);
@@ -328,13 +352,13 @@ int main(){
 	clReleaseCommandQueue(cmdQueue);
 	clReleaseContext(context);
 
+
 	for (int i = 0; i < width*height * 4; ++i){
 		nimage[i] = flat_image_blurred[i];
 	}
 
 	// SAVE IMAGE
 	encodeOneStep(filename_out, nimage, width, height);
-
 
 	system("PAUSE");
 	return 0;
