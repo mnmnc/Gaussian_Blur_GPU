@@ -1,4 +1,4 @@
-    //The Gaussian blur function that runs on the gpu
+// GAUSSIAN BLUR
 __kernel void gaussian_blur(__global const unsigned char *image, 
 							__global const float* G, 
 							const int W,
@@ -6,34 +6,35 @@ __kernel void gaussian_blur(__global const unsigned char *image,
 							const int size, 
 							__global unsigned char* newImg) 
 { 
+	// VARIABLES
 	unsigned int x, y, imgLineSize;
 	float value;
 	int i, xOff, yOff, center;
 
-    //Get the index of the current element being processed
+    // GET INDEX OF CURRENT ELEMENT
     i = get_global_id(0);
 
-    //Calculate some needed variables
-	imgLineSize = W*4;
-	center = size/2;
+    // CALCULATE VARIABLES
+	imgLineSize = W * 4;
+	center = size / 2;
 
-	//pass the pixel through the kernel if it can be centered inside it
+	// PROCESS THE PIXEL
 	if(i >= imgLineSize * (size-center) + center * 4 &&
 	   i <  W * H * 4 - imgLineSize * (size-center) - center * 4)
 	{
 		value=0;
-		for(y=0;y<size;y++)
+		for(y = 0; y < size; y++)
         {
-           	yOff = imgLineSize*(y-center);
-           	for(x=0;x<size;x++)
+           	yOff = imgLineSize * (y-center);
+           	for(x = 0; x < size; x++)
            	{
-           	    xOff = 4*(x-center);
-           	    value += G[y*size+x]*image[i+xOff+yOff];
+           	    xOff = 4 * (x-center);
+           	    value += G[y * size + x] * image[i + xOff + yOff];
            	}
         }
         newImg[i] = value;
 	}
-	else//if it's in the edge keep the same value
+	else // VALUE REMAINS IF WE ARE NEAR THE EDGE
 	{
 		newImg[i] = image[i];
 	}

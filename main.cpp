@@ -7,7 +7,7 @@
 #include <fstream>
 #include <vector>
 
-#define DIM 5
+#define DIM 20
 
 using namespace std;
 
@@ -85,14 +85,17 @@ std::vector<unsigned char> paint_pixel_white(std::vector<unsigned char> image, i
 
 int main(){
 
+	//// CAPTURE TIME
+	clock_t begin = clock();
+
 	// VARIABLES
-	char * filename = "hubble.png";
-	char * filename_out = "9.png";
-	int width = 3000;
-	int height = 1453;
+	char * filename = "rings.png";
+	char * filename_out = "rings_blured.png";
+	int width = 9000;
+	int height = 3500;
 
 	// GAUSSIAN VARIABLES
-	double gauss_sigma = 1;
+	double gauss_sigma = 20;
 	int gauss_filter_dimention = DIM;
 
 	// ORIGINAL IMAGE
@@ -356,6 +359,9 @@ int main(){
 	//// CHECK FULL TIME
 	std::cout << "[NFO] Full time spent by OpenCL part: " << double(clock() - begin_pt) / CLOCKS_PER_SEC << endl;
 
+	//// CAPTURE TIME
+	clock_t convertion_and_saving = clock();
+
 	// CONVERT ARRAY TO IMAGE VECTOR
 	for (int i = 0; i < width*height * 4; ++i){
 		nimage[i] = flat_image_blurred[i];
@@ -363,6 +369,12 @@ int main(){
 
 	// SAVE IMAGE
 	encodeOneStep(filename_out, nimage, width, height);
+
+	//// CHECK CONVERSION AND SAVING TIME
+	std::cout << "[NFO] Time spent on conversion and saving: " << double(clock() - convertion_and_saving) / CLOCKS_PER_SEC << endl;
+
+	//// CHECK FULL TIME
+	std::cout << "[NFO] Total time spent: " << double(clock() - begin) / CLOCKS_PER_SEC << endl;
 
 	system("PAUSE");
 	return 0;
