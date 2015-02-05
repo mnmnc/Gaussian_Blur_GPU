@@ -86,10 +86,10 @@ std::vector<unsigned char> paint_pixel_white(std::vector<unsigned char> image, i
 int main(){
 
 	// VARIABLES
-	char * filename = "3.png";
+	char * filename = "hubble.png";
 	char * filename_out = "9.png";
-	int width = 678;
-	int height = 353;
+	int width = 3000;
+	int height = 1453;
 
 	// GAUSSIAN VARIABLES
 	double gauss_sigma = 1;
@@ -124,6 +124,9 @@ int main(){
 	// O P E N   C L   B E G I N
 	//
 
+	//// CAPTURE TIME
+	clock_t begin_pt = clock();
+
 	// GETTING INFO
 	cl_int ret;					// ERROR CODES
 	cl_platform_id platformID;	// OPENCL PLATFORM ID
@@ -145,6 +148,8 @@ int main(){
 	string kernel_string(istreambuf_iterator<char>(cl_file), (istreambuf_iterator<char>()));
 	const char *src = kernel_string.c_str();
 
+	//// CAPTURE PREP TIME
+	clock_t prep_time = clock();
 
 	// ACQUIRING PLATFORM
 	if (clGetPlatformIDs(1, &platformID, &platformsN) != CL_SUCCESS)
@@ -208,6 +213,8 @@ int main(){
 		return false;
 	}
 
+	//// CAPTURE DATA TRANSFER TIME
+	clock_t data_transfer = clock();
 
 	// COPY IMAGE ARRAY TO MEM BUFFER
 	if (clEnqueueWriteBuffer(cmdQueue, gpuImg, CL_TRUE, 0, width*height * 4, flat_image, 0, NULL, NULL) != CL_SUCCESS)
@@ -224,6 +231,9 @@ int main(){
 		system("PAUSE");
 		return false;
 	}
+
+	//// CHECK DATA TRANSFER TIME
+	std::cout << "[NFO] Time spent transfering data : " << double(clock() - data_transfer) / CLOCKS_PER_SEC << endl;
 
 	// CREATE PROGRAM FROM GIVEN KERNEL SOURCE 
 	cl_program program = clCreateProgramWithSource(context, 1, (const char **)&src, NULL, &ret);
@@ -301,22 +311,29 @@ int main(){
 		return false;
 	}
 
-	// CAPTURE TIME
-	clock_t begin_pt = clock();
+	//// CHECK PREP TIME
+	std::cout << "[NFO] Time spent on preparation : " << double(clock() - prep_time) / CLOCKS_PER_SEC << endl;
 
 	// ENQUEUE THE KERNELL
 	size_t globalWorkItemSize = width*height * 4; // DIMENTION OF IMAGE BUFFER
 	size_t workGroupSize = 64; 
-	ret = clEnqueueNDRangeKernel(cmdQueue, kernel, 1, NULL, &globalWorkItemSize, &workGroupSize, 0, NULL, NULL);
 
-	// CHECK BLURING TIME
-	std::cout << "Time spent on bluring: " << double(clock() - begin_pt) / CLOCKS_PER_SEC << endl;
+	//// CAPTURE TIME
+	clock_t blurring_begin = clock();
+
+	cl_event event;
+	ret = clEnqueueNDRangeKernel(cmdQueue, kernel, 1, NULL, &globalWorkItemSize, &workGroupSize, 0, NULL, &event);
+	clWaitForEvents(1, &event);
 
 	// READ MEM BUFFER WITH NEW IMAGE
 	// MOVE DATA FROM DEVICE TO PREPARED BUFFER
 	ret = clEnqueueReadBuffer(cmdQueue, gpuNewImg, CL_TRUE, 0, width*height * 4, flat_image_blurred, 0, NULL, NULL);
 
-	
+	//// CHECK BLURING TIME
+	std::cout << "[NFO] Time spent on blurring : " << double(clock() - blurring_begin) / CLOCKS_PER_SEC << endl;
+
+	//// CAPTURE TIME
+	clock_t cleanup_time = clock();
 
 	// CLEANNING UP
 	clFlush(cmdQueue);
@@ -329,9 +346,15 @@ int main(){
 	clReleaseCommandQueue(cmdQueue);
 	clReleaseContext(context);
 
+	//// CHECK CLEANUP TIME
+	std::cout << "[NFO] Time spent on cleanup : " << double(clock() - cleanup_time) / CLOCKS_PER_SEC << endl;
+
 	//
 	// O P E N   C L   E N D
 	//
+
+	//// CHECK FULL TIME
+	std::cout << "[NFO] Full time spent by OpenCL part: " << double(clock() - begin_pt) / CLOCKS_PER_SEC << endl;
 
 	// CONVERT ARRAY TO IMAGE VECTOR
 	for (int i = 0; i < width*height * 4; ++i){
