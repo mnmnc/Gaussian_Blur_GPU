@@ -76,68 +76,12 @@ std::vector<unsigned char> paint_pixel_white(std::vector<unsigned char> image, i
 	return nimage;
 }
 
-std::vector<unsigned char> get_rgb_values_by_mask(std::vector<unsigned char> image, int width, int height, int x, int mask_size, vector<double> matrix){
-	/*
-	Calculates RGB values of given pixel based on gaussian convolution matrix
-
-	Example for mask_size = 5
-
-	ref_a . . . .
-	. . . . .
-	. . x . .
-	. . . . .
-	. . . . .
-	*/
-
-	// Will be returned
-	std::vector<unsigned char> rgb;
-
-	// Calculate top left corner
-	int index = x - (((int)(mask_size / 2)) * width) - ((int)(mask_size / 2));
-	int ref_a = index * 4;
-
-	// partial solutions variables
-	double r = 0;
-	double g = 0;
-	double b = 0;
-
-	// Calculate new RGB values based on pixel surroundings
-	for (int row = 0; row < mask_size; ++row){
-		for (int mask_position = 0; mask_position < mask_size; ++mask_position){
-
-			// Get common multiplier from convolution matrix
-			double mul = matrix[row * mask_size + mask_position];
-
-			// RED
-			if (ref_a + ((width * 4) * row) + (mask_position * 4) > 0 && ref_a + ((width * 4) * row) + (mask_position * 4) < width * height * 4){
-				r += image[ref_a + ((width * 4) * row) + (mask_position * 4)] * mul;
-			}
-
-			// GREEN
-			if (ref_a + ((width * 4) * row) + (mask_position * 4) + 1 > 0 && ref_a + ((width * 4) * row) + (mask_position * 4) + 1 < width * height * 4){
-				g += image[ref_a + ((width * 4) * row) + (mask_position * 4) + 1] * mul;
-			}
-			
-			// BLUE
-			if (ref_a + ((width * 4) * row) + (mask_position * 4) + 2 > 0 && ref_a + ((width * 4) * row) + (mask_position * 4) + 2 < width * height * 4){
-				b += image[ref_a + ((width * 4) * row) + (mask_position * 4) + 2] * mul;
-			}
-		}
-	}
-
-	rgb.push_back((unsigned char)r);
-	rgb.push_back((unsigned char)g);
-	rgb.push_back((unsigned char)b);
-
-	return rgb;
-}
-
 
 int main(){
 
 	// VARIABLES
 	char * filename = "3.png";
-	char * filename_out = "5.png";
+	char * filename_out = "8.png";
 	int width = 678;
 	int height = 353;
 
@@ -165,7 +109,7 @@ int main(){
 	for (int i = 0; i < image.size(); ++i){
 		flat_image[i] = image.at(i);
 	}
-	
+
 	// BLURRED IMAGE ARRAY
 	unsigned char * flat_image_blurred = new unsigned char[width * height * 4];
 
@@ -228,14 +172,14 @@ int main(){
 
 
 	/// Create memory buffers on the device for the two images
-	cl_mem gpuImg = clCreateBuffer(context, CL_MEM_READ_ONLY, width*height*4, NULL, &ret);
+	cl_mem gpuImg = clCreateBuffer(context, CL_MEM_READ_ONLY, width*height * 4, NULL, &ret);
 	if (ret != CL_SUCCESS)
 	{
 		printf("Unable to create the GPU image buffer object\n");
 		system("PAUSE");
 		return false;
 	}
-	cl_mem gpuGaussian = clCreateBuffer(context, CL_MEM_READ_ONLY, DIM*DIM*4, NULL, &ret);
+	cl_mem gpuGaussian = clCreateBuffer(context, CL_MEM_READ_ONLY, DIM*DIM * 4, NULL, &ret);
 	if (ret != CL_SUCCESS)
 	{
 		printf("Unable to create the GPU image buffer object\n");
@@ -336,7 +280,7 @@ int main(){
 	ret = clEnqueueNDRangeKernel(cmdQueue, kernel, 1, NULL, &globalWorkItemSize, &workGroupSize, 0, NULL, NULL);
 
 	///Read the memory buffer of the new image on the device to the new Data local variable
-	ret = clEnqueueReadBuffer(cmdQueue, gpuNewImg, CL_TRUE, 0, width*height*4, flat_image_blurred, 0, NULL, NULL);
+	ret = clEnqueueReadBuffer(cmdQueue, gpuNewImg, CL_TRUE, 0, width*height * 4, flat_image_blurred, 0, NULL, NULL);
 
 
 
