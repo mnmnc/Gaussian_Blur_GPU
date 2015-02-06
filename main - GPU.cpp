@@ -7,7 +7,7 @@
 #include <fstream>
 #include <vector>
 
-#define DIM 20
+#define DIM 5
 
 using namespace std;
 
@@ -22,8 +22,8 @@ std::vector<unsigned char> decodeOneStep(const char* filename)
 
 vector<double> create_convolution_matrix(double sigma){
 	/*
-		CREATES CONVOLUTION MATRIX FOR GAUSSIAN BLUR,
-		GIVEN SIGMA AND DIMENTION OF THE DESIRED FILTER.
+	CREATES CONVOLUTION MATRIX FOR GAUSSIAN BLUR,
+	GIVEN SIGMA AND DIMENTION OF THE DESIRED FILTER.
 	*/
 
 	int W = DIM;
@@ -66,12 +66,12 @@ void encodeOneStep(const char* filename, std::vector<unsigned char>& image, unsi
 
 std::vector<unsigned char> paint_pixel_white(std::vector<unsigned char> image, int x){
 	/*
-		HELPFUL FOR DEBUGGING
-		param :image:	- image saved in vector
-		param :x:		- pixel position to paint white
+	HELPFUL FOR DEBUGGING
+	param :image:	- image saved in vector
+	param :x:		- pixel position to paint white
 
-		Paints white pixel in the image.
-		Returns modified image vector.
+	Paints white pixel in the image.
+	Returns modified image vector.
 	*/
 	std::vector<unsigned char> nimage = image;
 	int ref = x * 4;
@@ -89,14 +89,30 @@ int main(){
 	clock_t begin = clock();
 
 	// VARIABLES
-	char * filename = "rings.png";
-	char * filename_out = "rings_blured.png";
+	//char * filename = "input1.png";
+	//char * filename_out = "output1.png";
+	//int width = 678;
+	//int height = 353;
+	//char * filename = "input2.png";
+	//char * filename_out = "output2.png";
+	//int width = 3000;
+	//int height = 1453;
+	char * filename = "input3.png";
+	char * filename_out = "output3.png";
 	int width = 9000;
 	int height = 3500;
 
 	// GAUSSIAN VARIABLES
-	double gauss_sigma = 20;
-	int gauss_filter_dimention = DIM;
+	double gauss_sigma = 1;
+	int gauss_filter_dimension = DIM;
+
+	// SHOW SETTINGS
+	cout << "Input file: " << filename << endl;
+	cout << "Dimensions: " << width << " x " << height << endl;
+	cout << "Output file: " << filename_out << endl;
+	cout << "Gaussian sigma: " << gauss_sigma << endl;
+	cout << "Gaussian filter dimension: " << gauss_filter_dimension << endl;
+
 
 	// ORIGINAL IMAGE
 	std::vector<unsigned char> image = decodeOneStep(filename);
@@ -271,37 +287,37 @@ int main(){
 	// SET ARGS TO KERNEL 
 	int failures = 0;
 
-		// SETTING IMAGE ARG
+	// SETTING IMAGE ARG
 	if (clSetKernelArg(kernel, 0, sizeof(cl_mem), (void *)&gpuImg) != CL_SUCCESS)
 	{
 		printf("[ERR] Failed to set image argument for kernel.\n");
 		++failures;
 	}
-		// SETTING GAUSSIAN MATRIX ARG
+	// SETTING GAUSSIAN MATRIX ARG
 	if (clSetKernelArg(kernel, 1, sizeof(cl_mem), (void *)&gpuGaussian) != CL_SUCCESS)
 	{
 		printf("[ERR] Failed to set convolution matrix argument for kernel.\n");
 		++failures;
 	}
-		// SETTING IMAGE WIDTH ARG
+	// SETTING IMAGE WIDTH ARG
 	if (clSetKernelArg(kernel, 2, sizeof(int), (void *)&width) != CL_SUCCESS)
 	{
 		printf("[ERR] Failed to set image width argument for kernel.\n");
 		++failures;
 	}
-		// SETTING IMAGE HEIGHT ARG
+	// SETTING IMAGE HEIGHT ARG
 	if (clSetKernelArg(kernel, 3, sizeof(int), (void *)&height) != CL_SUCCESS)
 	{
 		printf("[ERR] Failed to set image height argument for kernel.\n");
 		++failures;
 	}
-		// SETTING GAUSSIAN BLUR SIZE ARG
-	if (clSetKernelArg(kernel, 4, sizeof(int), (void*)&gauss_filter_dimention) != CL_SUCCESS)
+	// SETTING GAUSSIAN BLUR SIZE ARG
+	if (clSetKernelArg(kernel, 4, sizeof(int), (void*)&gauss_filter_dimension) != CL_SUCCESS)
 	{
 		printf("[ERR] Failed to set gaussian blur size argument for kernel.\n");
 		++failures;
 	}
-		// SETTING BUFFER FOR BLURRED IMAGE
+	// SETTING BUFFER FOR BLURRED IMAGE
 	if (clSetKernelArg(kernel, 5, sizeof(cl_mem), (void *)&gpuNewImg) != CL_SUCCESS)
 	{
 		printf("[ERR] Failed to set buffer for blurred image.\n");
@@ -319,7 +335,7 @@ int main(){
 
 	// ENQUEUE THE KERNELL
 	size_t globalWorkItemSize = width*height * 4; // DIMENTION OF IMAGE BUFFER
-	size_t workGroupSize = 64; 
+	size_t workGroupSize = 64;
 
 	//// CAPTURE TIME
 	clock_t blurring_begin = clock();
