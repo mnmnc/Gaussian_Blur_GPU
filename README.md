@@ -1,4 +1,4 @@
-# Gaussian_Blur_GPU
+# gaussian blur opencl
 C++ implementation of Gaussian Blur on PNG images with OpenCL on GPU.
 
 
